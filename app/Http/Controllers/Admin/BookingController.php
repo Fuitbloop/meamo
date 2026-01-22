@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use Illuminate\Http\Request;
+
+class BookingController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Booking::with(['service', 'schedule']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $bookings = $query->latest()->paginate(10);
+        return view('admin.bookings.index', compact('bookings'));
+    }
+
+    public function show(Booking $booking)
+    {
+        $booking->load(['service', 'schedule']);
+        return view('admin.bookings.show', compact('booking'));
+    }
+
+    public function updateStatus(Request $request, Booking $booking)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,booked,completed,cancelled',
+        ]);
+
+        $booking->update($validated);
+
+        if ($validated['status'] === 'booked') {
+            $booking->schedule->update(['status' => 'booked']);
+        }
+
+        return redirect()->route('admin.bookings.show', $booking)
+            ->with('success', 'Status booking berhasil diupdate!');
+    }
+
+    public function sendResult(Booking $booking)
+    {
+        return redirect()->route('admin.bookings.show', $booking)
+            ->with('success', 'Hasil foto berhasil dikirim ke customer!');
+    }
+
+    public function destroy(Booking $booking)
+    {
+        $booking->delete();
+
+        return redirect()->route('admin.bookings.index')
+            ->with('success', 'Booking berhasil dihapus!');
+    }
+}

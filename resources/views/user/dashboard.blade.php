@@ -55,17 +55,16 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $booking->service->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $booking->schedule->date }} <br>
-                                        <span class="text-sm text-gray-500">{{ $booking->schedule->start_time }} -
-                                            {{ $booking->schedule->end_time }}</span>
+                                        {{ \Carbon\Carbon::parse($booking->schedule->event_date)->format('Y-m-d') }} <br>
+                                        <span class="text-sm text-gray-500">{{ $booking->time_slot }} (Queue Slot)</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                        {{ $booking->status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
-                                                        {{ $booking->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                        {{ $booking->status === 'booked' ? 'bg-blue-100 text-blue-800' : '' }}
-                                                        {{ $booking->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}
-                                                    ">
+                                                                    {{ $booking->status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
+                                                                    {{ $booking->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                                                    {{ $booking->status === 'booked' ? 'bg-blue-100 text-blue-800' : '' }}
+                                                                    {{ $booking->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}
+                                                                ">
                                             {{ ucfirst($booking->status) }}
                                         </span>
                                     </td>

@@ -13,8 +13,10 @@ class BookingController extends Controller
     public function create()
     {
         $services = Service::all();
-        $schedules = Schedule::where('status', 'available')
-            ->where('event_date', '>=', now())
+
+
+        $schedules = Schedule::whereIn('status', ['available', 'booked'])
+            ->where('event_date', '>=', today())
             ->orderBy('event_date')
             ->get();
 
@@ -39,15 +41,16 @@ class BookingController extends Controller
         $schedule = Schedule::find($validated['schedule_id']);
 
         if (!$schedule->isAvailable()) {
-            return back()->with('error', 'Jadwal yang dipilih sudah tidak tersedia!');
+            return back()->with('error', 'Jadwal yang dipilih sudah penuh (Full Booked)!');
         }
 
         $validated['user_id'] = $user->id;
+        $validated['status'] = 'booked';
         $validated['status'] = 'pending';
 
         Booking::create($validated);
 
         return redirect()->route('dashboard')
-            ->with('success', 'Booking berhasil! Kami akan segera menghubungi Anda.');
+            ->with('success', 'Booking berhasil! Anda telah masuk antrian.');
     }
 }

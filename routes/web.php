@@ -19,8 +19,10 @@ Route::get('/schedules', [HomeController::class, 'schedules'])->name('schedules'
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 
 // User Booking Routes
-Route::get('/booking', [BookingController::class, 'create'])->name('booking.create');
-Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/booking', [BookingController::class, 'create'])->name('booking.create');
+    Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
+});
 
 // Admin Authentication Routes
 Route::prefix('admin')->name('admin.')->group(function () {

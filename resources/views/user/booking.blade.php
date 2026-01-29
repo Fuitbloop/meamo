@@ -31,8 +31,9 @@
                         <label>Schedule *</label>
                         <select name="schedule_id" class="w-full border rounded-lg px-4 py-3" required>
                             @foreach($schedules as $schedule)
-                                <option value="{{ $schedule->id }}">
-                                    {{ $schedule->event_date->format('d F Y') }}
+                                @php $isAvailable = $schedule->isAvailable(); @endphp
+                                <option value="{{ $schedule->id }}" {{ !$isAvailable ? 'disabled' : '' }} class="{{ !$isAvailable ? 'text-gray-400 bg-gray-100' : '' }}">
+                                    {{ $schedule->event_date->format('d F Y') }} ({{ $schedule->next_slot }}) {{ !$isAvailable ? '(Full)' : '' }}
                                 </option>
                             @endforeach
                         </select>

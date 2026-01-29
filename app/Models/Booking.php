@@ -44,4 +44,23 @@ class Booking extends Model
     {
         return $this->status === 'completed';
     }
+
+    public function getTimeSlotAttribute(): string
+    {
+        if (!$this->schedule) {
+            return '-';
+        }
+
+        $position = Booking::where('schedule_id', $this->schedule_id)
+            ->where('id', '<', $this->id)
+            ->where('status', '!=', 'cancelled')
+            ->count();
+
+        $startTime = \Carbon\Carbon::parse($this->schedule->event_date->format('Y-m-d') . ' ' . $this->schedule->start_time);
+
+        $slotStart = $startTime->addMinutes($position * 10);
+        $slotEnd = $slotStart->copy()->addMinutes(10);
+
+        return $slotStart->format('H:i') . ' - ' . $slotEnd->format('H:i');
+    }
 }

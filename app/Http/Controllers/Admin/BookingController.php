@@ -10,7 +10,7 @@ class BookingController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Booking::with(['service', 'schedule']);
+        $query = Booking::with(['user', 'service', 'schedule']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -22,7 +22,7 @@ class BookingController extends Controller
 
     public function show(Booking $booking)
     {
-        $booking->load(['service', 'schedule']);
+        $booking->load(['user', 'service', 'schedule']);
         return view('admin.bookings.show', compact('booking'));
     }
 
@@ -35,7 +35,8 @@ class BookingController extends Controller
         $booking->update($validated);
 
         if ($validated['status'] === 'booked') {
-            $booking->schedule->update(['status' => 'booked']);
+            // $booking->schedule->update(['status' => 'booked']);
+            // Logic change: Schedule remains available until full capacity (handled in booking creation)
         }
 
         return redirect()->route('admin.bookings.show', $booking)

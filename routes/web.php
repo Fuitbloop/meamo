@@ -30,20 +30,26 @@ Route::prefix('admin')->name('admin.')->group(function () {
 });
 
 // Admin Protected Routes
-Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware('auth:admin')
+    ->group(function () {
 
-    // Services Management
-    Route::resource('services', ServiceController::class);
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->name('dashboard');
 
-    // Schedules Management
-    Route::resource('schedules', ScheduleController::class);
+        Route::resource('services', ServiceController::class);
+        Route::resource('schedules', ScheduleController::class);
+        Route::resource('bookings', AdminBookingController::class);
 
-    // Bookings Management
-    Route::resource('bookings', AdminBookingController::class);
-    Route::patch('/bookings/{booking}/status', [AdminBookingController::class, 'updateStatus'])->name('bookings.status');
-    Route::post('/bookings/{booking}/send-result', [AdminBookingController::class, 'sendResult'])->name('bookings.send-result');
+        Route::patch('/bookings/{booking}/status',
+            [AdminBookingController::class, 'updateStatus']
+        )->name('bookings.status');
 
-    // Gallery Management
-    Route::resource('galleries', GalleryController::class);
+        Route::post('/bookings/{booking}/send-result',
+            [AdminBookingController::class, 'sendResult']
+        )->name('bookings.send-result');
+
+        Route::resource('galleries', GalleryController::class);
 });
+

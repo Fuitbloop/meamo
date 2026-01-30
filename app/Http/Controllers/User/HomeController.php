@@ -41,6 +41,25 @@ class HomeController extends Controller
 
     public function contact()
     {
-        return view('user.contact');
+        // Tambahkan data services dan schedules untuk form contact
+        $services = Service::all();
+        $schedules = Schedule::where('status', 'available')
+            ->where('event_date', '>=', now())
+            ->orderBy('event_date')
+            ->get();
+
+        return view('user.contact', compact('services', 'schedules'));
+    }
+
+    // Jika ada method untuk booking, tambahkan ini juga
+    public function booking()
+    {
+        $services = Service::all();
+        $schedules = Schedule::where('status', 'available')
+            ->where('event_date', '>=', now())
+            ->orderBy('event_date')
+            ->get();
+
+        return view('user.booking', compact('services', 'schedules'));
     }
 }

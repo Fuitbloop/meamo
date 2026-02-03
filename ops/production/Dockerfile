@@ -40,10 +40,10 @@ COPY --from=php_builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 
 WORKDIR /opt/apps/meamo
 COPY --from=php_builder --chown=www-data:www-data /opt/apps/meamo /opt/apps/meamo
-COPY ops/web/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ops/production/nginx/nginx.conf /etc/nginx/nginx.conf
 
 RUN mkdir -p /run/nginx
 
 ENV PORT=8080
 
-CMD ["sh", "-c", "sh /opt/apps/meamo/ops/web/nginx/startup.sh"]
+CMD ["sh", "-c", "sh /opt/apps/meamo/ops/production/nginx/startup.sh"]

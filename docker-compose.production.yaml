@@ -13,7 +13,6 @@ services:
     volumes:
       - '.:/opt/apps/meamo'
     depends_on:
-      - fpm
       - mysql
     networks:
       - meamo

@@ -39,7 +39,7 @@ shell:
 	@if [ "$(APP_ENV)" = "local" ]; then \
 		docker compose -f docker-compose.local.yaml -p ${DOCKER_NAME} exec -it web sh; \
 	else \
-		docker compose -f docker-compose.production.yaml -p ${DOCKER_NAME} exec -it fpm sh; \
+		docker compose -f docker-compose.production.yaml -p ${DOCKER_NAME} exec -it web sh; \
 	fi
 
 docker-build-local:

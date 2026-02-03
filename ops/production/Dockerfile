@@ -1,49 +1,54 @@
-FROM php:8.4-fpm-alpine AS php_builder
-
-ARG PHP_EXTS="bcmath ctype fileinfo mbstring pdo pdo_mysql gd pcntl zip"
-ARG PHP_PECL_EXTS="redis"
-
-RUN apk add --no-cache \
-    $PHPIZE_DEPS autoconf make gcc g++ \
-    icu-dev libxml2-dev oniguruma-dev \
-    libpng-dev jpeg-dev freetype-dev libwebp-dev \
-    libzip-dev zlib-dev \
-    nodejs npm
-
-RUN docker-php-ext-configure gd \
-    --with-freetype \
-    --with-jpeg \
-    --with-webp
-
-RUN docker-php-ext-install -j$(nproc) ${PHP_EXTS}
-RUN pecl install ${PHP_PECL_EXTS} && docker-php-ext-enable ${PHP_PECL_EXTS}
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+FROM composer:2 AS composer_build
 
 WORKDIR /opt/apps/meamo
 COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-progress
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts
-COPY . /opt/apps/meamo
+COPY . .
 RUN composer dump-autoload --optimize
+
+FROM node:22-alpine AS frontend_build
+
+WORKDIR /opt/apps/meamo
+COPY --from=composer_build /opt/apps/meamo /opt/apps/meamo
 
 RUN npm ci
 RUN npm run build
 
-FROM php:8.4-fpm-alpine AS runtime
+FROM php:8.4-fpm-alpine AS app
 
-RUN apk add --no-cache nginx \
-    icu libjpeg-turbo libpng freetype libwebp libzip \
-    php-pgsql
-
-COPY --from=php_builder /usr/local/lib/php/extensions /usr/local/lib/php/extensions
-COPY --from=php_builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
+ARG PHP_EXTS="bcmath ctype fileinfo mbstring pdo pdo_mysql gd pcntl zip"
+ARG PHP_PECL_EXTS="redis"
 
 WORKDIR /opt/apps/meamo
-COPY --from=php_builder --chown=www-data:www-data /opt/apps/meamo /opt/apps/meamo
-COPY ops/production/nginx/nginx.conf /etc/nginx/nginx.conf
+RUN apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        freetype-dev libjpeg-turbo-dev libpng-dev \
+        libzip-dev oniguruma-dev libxml2-dev \
+    && apk add --no-cache \
+        freetype libjpeg-turbo libpng libzip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) ${PHP_EXTS} \
+    && pecl install ${PHP_PECL_EXTS} \
+    && docker-php-ext-enable ${PHP_PECL_EXTS} \
+    && apk del .build-deps
 
-RUN mkdir -p /run/nginx
+COPY --from=frontend_build /opt/apps/meamo /opt/apps/meamo
+RUN chown -R www-data:www-data \
+    storage bootstrap/cache
 
-ENV PORT=80
+USER www-data
+RUN php artisan event:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
 
-CMD ["sh", "-c", "sh /opt/apps/meamo/ops/production/nginx/startup.sh"]
+FROM nginx:1.25-alpine
+
+WORKDIR /opt/apps/meamo
+COPY ops/production/nginx/nginx.conf.template \
+     /etc/nginx/templates/default.conf.template
+COPY --from=app /opt/apps/meamo/public /opt/apps/meamo/public

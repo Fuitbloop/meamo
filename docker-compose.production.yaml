@@ -1,72 +1,66 @@
 services:
-  fpm:
-    restart: always
-    container_name: meamo.fpm.production
+  web:
+    container_name: meamo.web.production
+    image: ${DOCKER_REGISTRY}/web:${IMAGE_VERSION}
     build:
       context: .
-      dockerfile: ops/production/fpm.Dockerfile
-    image: ${DOCKER_REGISTRY}/fpm:${IMAGE_VERSION}
+      dockerfile: ops/production/Dockerfile
+      target: web
+    restart: always
+    ports:
+      - "${DOCKER_HOST:-127.0.0.1:8000}:80"
     volumes:
-      - '.:/opt/apps/meamo'
+      - .:/opt/apps/meamo:ro
+    depends_on:
+      - fpm
     networks:
       - meamo
 
-  web:
-    restart: always
-    container_name: meamo.web.production
+  fpm:
+    container_name: meamo.fpm.production
+    image: ${DOCKER_REGISTRY}/fpm:${IMAGE_VERSION}
     build:
       context: .
-      dockerfile: ops/production/web.Dockerfile
-    image: ${DOCKER_REGISTRY}/web:${IMAGE_VERSION}
-    ports:
-      - "8082:80"
-    environment:
-      FPM_HOST: "fpm:9000"
+      dockerfile: ops/production/Dockerfile
+      target: fpm
+    restart: always
     volumes:
-      - '.:/opt/apps/meamo'
+      - .:/opt/apps/meamo
+    env_file:
+      - .env
     depends_on:
-      - fpm
       - mysql
+      - redis
     networks:
       - meamo
 
   mysql:
-    restart: always
     container_name: meamo.mysql.production
     image: mysql:8.2
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: meamo
+    command: >
+      --max_connections=500
+      --innodb_buffer_pool_size=4096M
+      --innodb_log_file_size=256M
     volumes:
-      - 'mysql:/var/lib/mysql'
-      - '.:/opt/apps/meamo'
+      - mysql:/var/lib/mysql
     networks:
       - meamo
-    command: --max_connections=500 --innodb_buffer_pool_size=8096M --innodb_log_file_size=256M
-    healthcheck:
-      test: [
-        "CMD",
-        "mysqladmin",
-        "ping",
-        "-p${DB_PASSWORD}"
-      ]
-      retries: 3
-      timeout: 5s
 
   redis:
-    restart: always
     container_name: meamo.redis.production
     image: redis:6.0
+    restart: always
+    volumes:
+      - redis:/data
     networks:
       - meamo
-    volumes:
-      - 'redis:/data'
-    healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
 networks:
   meamo:
-    name: meamo
     driver: bridge
 
 volumes:

@@ -8,7 +8,6 @@ services:
       MYSQL_DATABASE: meamo
     volumes:
       - 'mysql:/var/lib/mysql'
-      - '.:/opt/apps/meamo'
     networks:
       - meamo
     healthcheck:
@@ -39,12 +38,11 @@ services:
       context: .
       dockerfile: ops/local/Dockerfile
     image: ${DOCKER_REGISTRY}/web:${IMAGE_VERSION}
+    user: "${UID:-1000}:${GID:-1000}"
     ports:
-      - "${DOCKER_PORT:-127.0.0.1:8000}:8000"
+      - "${DOCKER_HOST:-127.0.0.1:8000}:8000"
     volumes:
       - ".:/opt/apps/meamo"
-    env_file:
-      - .env
     depends_on:
       - mysql
     networks:
